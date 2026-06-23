@@ -50,6 +50,9 @@ jobs:
           script: |
             IMAGE_URI="public.ecr.aws/${{ secrets.ECR_PUBLIC_ALIAS }}/${{ secrets.ECR_REPOSITORY }}"
 
+            aws ecr-public get-login-password --region us-east-1 \
+              | docker login --username AWS --password-stdin public.ecr.aws
+
             docker pull $IMAGE_URI:dev-latest
 
             docker stop inhouse-dev 2>/dev/null || true
