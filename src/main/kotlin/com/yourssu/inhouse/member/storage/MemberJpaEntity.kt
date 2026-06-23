@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import java.time.LocalDate
 
 @Entity
+@Table(name = "members")
 class MemberJpaEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,

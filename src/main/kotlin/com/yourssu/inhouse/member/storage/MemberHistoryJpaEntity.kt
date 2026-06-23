@@ -3,6 +3,7 @@ package com.yourssu.inhouse.member.storage
 import jakarta.persistence.*
 
 @Entity
+@Table(name = "member_histories")
 class MemberHistoryJpaEntity(
     @Id @GeneratedValue(GenerationType.IDENTITY)
     val id: Long? = null,
