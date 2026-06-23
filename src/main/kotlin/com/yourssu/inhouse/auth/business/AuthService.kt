@@ -21,11 +21,7 @@ class AuthService(
             throw AlreadyRegisteredException("이미 회원가입된 이메일입니다.")
         }
         member.passwordHash = passwordEncoder.encode(password)
-        return AuthResponse(
-            token = jwtProvider.generate(requireNotNull(member.id), member.email),
-            memberId = requireNotNull(member.id),
-            email = member.email,
-        )
+        return AuthResponse(token = jwtProvider.generate(requireNotNull(member.id), member.email))
     }
 
     @Transactional(readOnly = true)
@@ -35,10 +31,6 @@ class AuthService(
         if (member == null || hash == null || !passwordEncoder.matches(password, hash)) {
             throw IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.")
         }
-        return AuthResponse(
-            token = jwtProvider.generate(requireNotNull(member.id), member.email),
-            memberId = requireNotNull(member.id),
-            email = member.email,
-        )
+        return AuthResponse(token = jwtProvider.generate(requireNotNull(member.id), member.email))
     }
 }
