@@ -155,4 +155,126 @@ class MemberControllerTest {
                 status { isNotFound() }
             }
     }
+
+    @Test
+    fun `GET members with query param returns filtered results`() {
+        val members = listOf(sampleMember())
+        whenever(memberService.search(eq("홍"), isNull(), eq(0), eq(20)))
+            .thenReturn(PageImpl(members, PageRequest.of(0, 20), 1))
+
+        mockMvc.get("/members?query=홍")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.content[0].name") { value("홍길동") }
+                jsonPath("$.totalElements") { value(1) }
+            }
+    }
+
+    @Test
+    fun `GET members with part filter returns filtered results`() {
+        val members = listOf(sampleMember())
+        whenever(memberService.search(isNull(), eq(MemberPart.BACKEND), eq(0), eq(20)))
+            .thenReturn(PageImpl(members, PageRequest.of(0, 20), 1))
+
+        mockMvc.get("/members?part=BACKEND")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.content[0].parts[0]") { value("BACKEND") }
+            }
+    }
+
+    @Test
+    fun `GET members with pagination params uses correct page and size`() {
+        whenever(memberService.search(isNull(), isNull(), eq(1), eq(5)))
+            .thenReturn(PageImpl(emptyList(), PageRequest.of(1, 5), 0))
+
+        mockMvc.get("/members?page=1&size=5")
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.page") { value(1) }
+                jsonPath("$.size") { value(5) }
+                jsonPath("$.totalElements") { value(0) }
+            }
+    }
+
+    @Test
+    fun `POST members with inactive state returns 201 with inactive fields`() {
+        val inactiveMember = sampleMember().copy(
+            status = MemberStatus.Inactive(
+                inActiveReason = "군휴학",
+                expectedReturnSemester = "2025-1",
+            )
+        )
+        whenever(memberService.create(any())).thenReturn(inactiveMember)
+
+        val inactiveJson = """
+            {
+                "name": "홍길동",
+                "nickname": "hong",
+                "nicknameKo": "홍",
+                "email": "hong@yourssu.com",
+                "phoneNumber": "010-0000-0000",
+                "department": "컴퓨터학부",
+                "studentId": "20200001",
+                "birthDate": "2000-01-01",
+                "joinSemester": "2020-1",
+                "position": "MEMBER",
+                "parts": ["BACKEND"],
+                "state": "inactive",
+                "inActiveReason": "군휴학",
+                "expectedReturnSemester": "2025-1"
+            }
+        """.trimIndent()
+
+        mockMvc.post("/members") {
+            contentType = MediaType.APPLICATION_JSON
+            content = inactiveJson
+        }.andExpect {
+            status { isCreated() }
+            jsonPath("$.state") { value("inactive") }
+            jsonPath("$.inActiveReason") { value("군휴학") }
+            jsonPath("$.expectedReturnSemester") { value("2025-1") }
+        }
+    }
+
+    @Test
+    fun `POST members with unknown state returns 400`() {
+        val invalidJson = """
+            {
+                "name": "홍길동",
+                "nickname": "hong",
+                "nicknameKo": "홍",
+                "email": "hong@yourssu.com",
+                "phoneNumber": "010-0000-0000",
+                "department": "컴퓨터학부",
+                "studentId": "20200001",
+                "birthDate": "2000-01-01",
+                "joinSemester": "2020-1",
+                "position": "MEMBER",
+                "parts": ["BACKEND"],
+                "state": "unknown_state"
+            }
+        """.trimIndent()
+
+        mockMvc.post("/members") {
+            contentType = MediaType.APPLICATION_JSON
+            content = invalidJson
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error") { exists() }
+        }
+    }
+
+    @Test
+    fun `PUT members-id returns 404 for unknown member`() {
+        whenever(memberService.update(eq(99L), any())).thenThrow(MemberNotFoundException(99L))
+
+        mockMvc.put("/members/99") {
+            contentType = MediaType.APPLICATION_JSON
+            content = createRequestJson
+        }.andExpect {
+            status { isNotFound() }
+            jsonPath("$.error") { exists() }
+        }
+    }
 }

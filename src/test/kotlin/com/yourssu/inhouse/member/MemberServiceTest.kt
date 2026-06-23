@@ -18,6 +18,8 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import java.time.LocalDate
 import kotlin.test.assertEquals
 
@@ -118,5 +120,27 @@ class MemberServiceTest {
         memberService.delete(1L)
 
         verify(memberWriter).delete(1L)
+    }
+
+    @Test
+    fun `search delegates to memberReader with correct params`() {
+        val page = PageImpl(listOf(sampleMember()), PageRequest.of(0, 10), 1)
+        whenever(memberReader.search("홍", MemberPart.BACKEND, 0, 10)).thenReturn(page)
+
+        val result = memberService.search("홍", MemberPart.BACKEND, 0, 10)
+
+        assertEquals(1, result.content.size)
+        verify(memberReader).search("홍", MemberPart.BACKEND, 0, 10)
+    }
+
+    @Test
+    fun `search with null params delegates to memberReader`() {
+        val page = PageImpl(listOf(sampleMember(), sampleMember(2L)), PageRequest.of(0, 20), 2)
+        whenever(memberReader.search(null, null, 0, 20)).thenReturn(page)
+
+        val result = memberService.search(null, null, 0, 20)
+
+        assertEquals(2, result.content.size)
+        verify(memberReader).search(null, null, 0, 20)
     }
 }
