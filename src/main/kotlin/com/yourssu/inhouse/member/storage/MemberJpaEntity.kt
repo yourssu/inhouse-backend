@@ -33,6 +33,8 @@ class MemberJpaEntity(
 
     var withdrawnSemester: String? = null,
 
+    var passwordHash: String? = null,
+
     @OneToMany(mappedBy = "member", cascade = [CascadeType.ALL], orphanRemoval = true)
     val parts: MutableList<MemberPartJpaEntity> = mutableListOf(),
 

@@ -12,3 +12,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+jwt:
+  secret: local-dev-secret-key-please-change-in-production-32chars
+  expiration-ms: 86400000
