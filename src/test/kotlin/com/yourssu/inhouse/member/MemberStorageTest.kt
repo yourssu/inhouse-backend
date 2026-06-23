@@ -150,4 +150,102 @@ class MemberStorageTest {
         assertEquals("군휴학", status.inActiveReason)
         assertEquals("2025-1", status.expectedReturnSemester)
     }
+
+    @Test
+    fun `completed status is persisted and restored correctly`() {
+        val completedStatus = MemberStatus.Completed(completedSemester = "2024-2")
+        val created = memberWriter.create(sampleMember(status = completedStatus))
+        em.flush()
+        em.clear()
+
+        val found = memberReader.read(created.id)
+        val status = found.status as MemberStatus.Completed
+        assertEquals("2024-2", status.completedSemester)
+    }
+
+    @Test
+    fun `withdrawn status is persisted and restored correctly`() {
+        val withdrawnStatus = MemberStatus.Withdrawn(withdrawnSemester = "2023-1")
+        val created = memberWriter.create(sampleMember(status = withdrawnStatus))
+        em.flush()
+        em.clear()
+
+        val found = memberReader.read(created.id)
+        val status = found.status as MemberStatus.Withdrawn
+        assertEquals("2023-1", status.withdrawnSemester)
+    }
+
+    @Test
+    fun `search finds member by name query`() {
+        memberWriter.create(sampleMember())
+        em.flush()
+        em.clear()
+
+        val result = memberReader.search("홍길동", null, 0, 20)
+
+        assertTrue(result.content.any { it.name == "홍길동" })
+    }
+
+    @Test
+    fun `search finds member by chosung query`() {
+        memberWriter.create(sampleMember())
+        em.flush()
+        em.clear()
+
+        val result = memberReader.search("ㅎㄱㄷ", null, 0, 20)
+
+        assertTrue(result.totalElements >= 1)
+        assertTrue(result.content.any { it.name == "홍길동" })
+    }
+
+    @Test
+    fun `search returns empty when query does not match`() {
+        memberWriter.create(sampleMember())
+        em.flush()
+        em.clear()
+
+        val result = memberReader.search("김철수", null, 0, 20)
+
+        assertTrue(result.content.none { it.name == "홍길동" })
+    }
+
+    @Test
+    fun `search filters by part and excludes non-matching members`() {
+        memberWriter.create(sampleMember(parts = listOf(MemberPart.BACKEND)))
+        memberWriter.create(sampleMember(parts = listOf(MemberPart.FRONTEND)))
+        em.flush()
+        em.clear()
+
+        val result = memberReader.search(null, MemberPart.BACKEND, 0, 20)
+
+        assertTrue(result.content.all { MemberPart.BACKEND in it.parts })
+        assertTrue(result.content.none { MemberPart.FRONTEND in it.parts && MemberPart.BACKEND !in it.parts })
+    }
+
+    @Test
+    fun `search pagination returns correct number of results`() {
+        repeat(5) { memberWriter.create(sampleMember()) }
+        em.flush()
+        em.clear()
+
+        val result = memberReader.search(null, null, 0, 3)
+
+        assertEquals(3, result.content.size)
+        assertEquals(3, result.size)
+        assertTrue(result.totalElements >= 5)
+    }
+
+    @Test
+    fun `search second page returns remaining results`() {
+        repeat(5) { memberWriter.create(sampleMember()) }
+        em.flush()
+        em.clear()
+
+        val total = memberReader.search(null, null, 0, 20).totalElements
+        val firstPage = memberReader.search(null, null, 0, 3)
+        val secondPage = memberReader.search(null, null, 1, 3)
+
+        assertEquals(total, firstPage.totalElements)
+        assertEquals((total - 3).coerceAtLeast(0), secondPage.content.size.toLong())
+    }
 }
