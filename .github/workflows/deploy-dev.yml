@@ -58,7 +58,7 @@ jobs:
             docker run -d \
               --name inhouse-dev \
               --restart unless-stopped \
-              -p 8080:8080 \
+              -p 9031:8080 \
               --env-file /opt/inhouse/.env \
               -e PROFILE=dev \
               $IMAGE_URI:dev-latest

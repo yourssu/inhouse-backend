@@ -58,7 +58,7 @@ jobs:
             docker run -d \
               --name inhouse-prod \
               --restart unless-stopped \
-              -p 8080:8080 \
+              -p 9030:8080 \
               --env-file /opt/inhouse/.env \
               -e PROFILE=prod \
               $IMAGE_URI:prod-latest
