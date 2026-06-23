@@ -26,6 +26,7 @@ class MemberJpaEntity(
     var grade: Int? = null,
     var isDuesPaid: Boolean? = null,
 
+    @Column(name = "inactive_reason")
     var inActiveReason: String? = null,
     var expectedReturnSemester: String? = null,
 
